@@ -101,7 +101,3 @@ db_instance.delete_table('example_table')
 ### Contributing
 
 Feel free to contribute to the improvement and expansion of this utility. Fork the repository, make your changes, and submit a pull request.
-
-### License
-
-This project is licensed under the [MIT License](LICENSE).

@@ -100,11 +100,11 @@ class DataBaseV2():
         self.engine = db.create_engine(self.url)
         self.connection = self.engine.connect()
         self.metadata = db.MetaData()
-        try:self.table = self.engine.dialect.get_table_names(self.connection)
+        try:self.tables = self.engine.dialect.get_table_names(self.connection)
         except: pass
 
     def show_tables_infos(self):
-        for table in self.table:
+        for table in self.tables:
             try:self.read_table(table)
             except:pass
         return dict(self.metadata.tables)
@@ -116,7 +116,7 @@ class DataBaseV2():
             db.Table(name_table, self.metadata, *colums)
             self.metadata.create_all(self.engine)
             print(f"Table : '{name_table}' are created succesfully")
-            self.table = list(self.metadata.tables.keys())
+            self.tables = list(self.metadata.tables.keys())
         except:
             print(f"Error: Table : '{name_table}' are not created, check the name or the columns or the table already exist")
 
@@ -131,6 +131,8 @@ class DataBaseV2():
     def dataframe(self, name_table: str):
         try : return pd.DataFrame(self.select_table(name_table))
         except : print(f"Error: Table : '{name_table}' not found")
+
+    
 
     def get_columns_table(self, table_name):
         try : return self.engine.dialect.get_columns(self.connection, table_name)
@@ -173,12 +175,35 @@ class DataBaseV2():
         if name_table is not None:name_table.drop(self.engine), print(f'Table {table} deleted successfully')
         else: print(f'Error: Table {table} not found')
         self.metadata.remove(self.read_table(table))
-        self.table = list(self.metadata.tables.keys())
+        self.tables = list(self.metadata.tables.keys())
  
     def query_to_dataframe(self, query):
         try:return pd.read_sql(sql=text(query), con=self.engine.connect())
         except:print(f'Error: Query not executed')
         
+    def send_query(self, query):
+        try:
+            with self.engine.connect() as conn:
+                conn.execute(text(query))
+                self.tables
+        except:
+            print(f'Error: Query not executed')
+
+    def load_cvs_to_table(self, name_table, path):
+        df = pd.read_csv(path)
+        columns = df.columns
+        data_type = {
+                'int64' : db.INTEGER,
+                'float64' : db.FLOAT,
+                'object' : db.String,
+                'datetime64' : db.DateTime,
+                'bool' : db.Boolean,
+                'category' : db.String    
+            }
+        if  name_table not in self.tables:
+            definition_columns = {column:data_type[str(df[column].dtype)] for column in columns}
+            self.create_table(name_table, **definition_columns)
+
 
     def update_row_by_id(self, table, id_, **kwargs):
         name_table = self.read_table(table)
