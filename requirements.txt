@@ -1,0 +1,2 @@
+pandas==2.2.0
+SQLAlchemy==2.0.21

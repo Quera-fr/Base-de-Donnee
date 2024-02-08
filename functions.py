@@ -107,7 +107,7 @@ class DataBaseV2():
         for table in self.table:
             try:self.read_table(table)
             except:pass
-        return (self.metadata.tables)
+        return dict(self.metadata.tables)
 
 
     def create_table(self, name_table, **kwargs):
