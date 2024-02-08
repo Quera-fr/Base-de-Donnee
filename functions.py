@@ -189,8 +189,11 @@ class DataBaseV2():
         except:
             print(f'Error: Query not executed')
 
-    def load_cvs_to_table(self, name_table, path):
+    def csv_to_table(self, name_table, path):
         df = pd.read_csv(path)
+        self.dataframe_to_table(name_table, df)
+
+    def dataframe_to_table(self, name_table, df):
         columns = df.columns
         data_type = {
                 'int64' : db.INTEGER,
@@ -202,7 +205,11 @@ class DataBaseV2():
             }
         if  name_table not in self.tables:
             definition_columns = {column:data_type[str(df[column].dtype)] for column in columns}
+            print(definition_columns)
             self.create_table(name_table, **definition_columns)
+            for n_ligne in range(len(df)):
+                data = dict(df.iloc[n_ligne])
+                self.add_row('Table', **data)
 
 
     def update_row_by_id(self, table, id_, **kwargs):
