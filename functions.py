@@ -1,5 +1,6 @@
 import sqlalchemy as db
 import pandas as pd
+from sqlalchemy import text
 
 class DataBaseV1():
     # SQLalchemy1.4.4
@@ -102,28 +103,34 @@ class DataBaseV2():
         try:self.table = self.engine.dialect.get_table_names(self.connection)
         except: pass
 
-    def show_tables(self):
+    def show_tables_infos(self):
         for table in self.table:
             try:self.read_table(table)
             except:pass
-        return self.metadata.tables
-
+        return (self.metadata.tables)
 
 
     def create_table(self, name_table, **kwargs):
-        colums = [db.Column(k, v, primary_key = True) if 'id_' in k else db.Column(k, v) for k,v in kwargs.items()]
-        db.Table(name_table, self.metadata, *colums)
-        self.metadata.create_all(self.engine)
-        print(f"Table : '{name_table}' are created succesfully")
-        self.table = list(self.metadata.tables.keys())
+        try:
+            colums = [db.Column(k, v, primary_key = True) if 'id_' in k else db.Column(k, v) for k,v in kwargs.items()]
+            db.Table(name_table, self.metadata, *colums)
+            self.metadata.create_all(self.engine)
+            print(f"Table : '{name_table}' are created succesfully")
+            self.table = list(self.metadata.tables.keys())
+        except:
+            print(f"Error: Table : '{name_table}' are not created, check the name or the columns or the table already exist")
 
     def read_table(self, name_table, return_keys=False):
-        table = db.Table(name_table, self.metadata, autoload_with=self.engine)
-        if return_keys:table.columns.keys() 
-        else : return table
+        try:
+            table = db.Table(name_table, self.metadata, autoload_with=self.engine)
+            if return_keys:table.columns.keys() 
+            else : return table
+        except:
+            print(f"Error: Table : '{name_table}' not found")
 
     def dataframe(self, name_table: str):
-        return pd.DataFrame(self.select_table(name_table))
+        try : return pd.DataFrame(self.select_table(name_table))
+        except : print(f"Error: Table : '{name_table}' not found")
 
     def get_columns_table(self, table_name):
         try : return self.engine.dialect.get_columns(self.connection, table_name)
@@ -167,12 +174,10 @@ class DataBaseV2():
         else: print(f'Error: Table {table} not found')
         self.metadata.remove(self.read_table(table))
         self.table = list(self.metadata.tables.keys())
-
-    from sqlalchemy import text
  
     def query_to_dataframe(self, query):
-        return pd.read_sql(sql=str(query), con=self.engine.connect())
- 
+        try:return pd.read_sql(sql=text(query), con=self.engine.connect())
+        except:print(f'Error: Query not executed')
         
 
     def update_row_by_id(self, table, id_, **kwargs):
